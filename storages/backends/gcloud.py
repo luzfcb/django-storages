@@ -93,7 +93,9 @@ class GoogleCloudStorage(Storage):
         for name, value in settings.items():
             if hasattr(self, name):
                 setattr(self, name, value)
-
+        
+        self.location = (self.location or '').lstrip('/')
+        
         self._bucket = None
         self._client = None
 
@@ -134,7 +136,11 @@ class GoogleCloudStorage(Storage):
         and ./file.txt work.  Note that clean_name adds ./ to some paths so
         they need to be fixed here.
         """
-        return safe_join('', name)
+        try:
+            return safe_join(self.location, name)
+        except ValueError:
+            raise SuspiciousOperation("Attempted access to '%s' denied." %
+                                      name)
 
     def _encode_name(self, name):
         return smart_str(name, encoding=self.file_name_charset)
